@@ -5,27 +5,27 @@ import io.cucumber.java.Before;
 import io.cucumber.java.BeforeAll;
 
 
-class Hook {
+public class Hook {
     @BeforeAll
-    static void setUpBeforeClass() {
+    public static void setUpBeforeClass() {
         // Simulação de configuração global antes da execução de todos os testes
         System.out.println("Configuração global antes de todos os testes.");
         inicializarAmbiente();
     }
     @AfterAll
-    static void tearDownAfterClass() {
+    public static void tearDownAfterClass() {
         // Simulação de limpeza global após a execução de todos os testes
         System.out.println("Limpeza global após todos os testes.");
         limparAmbiente();
     }
     @Before
-    void setUp() {
+    public void setUp() {
         // Simulação de configuração antes da execução de cada cenário
         System.out.println("Iniciando um novo cenário de teste...");
         prepararDadosParaTeste();
     }
     @After
-    void tearDown() {
+    public void tearDown() {
         // Simulação de limpeza após a execução de cada cenário
         System.out.println("Finalizando o cenário de teste...");
         limparDadosDepoisDoTeste();
