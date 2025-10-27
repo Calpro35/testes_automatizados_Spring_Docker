@@ -1,38 +1,47 @@
 name: Continuous Integration
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - '*'
 
 jobs:
   continuous-integration:
     runs-on: ubuntu-latest
     
+    services:
+      # ✅ Sobe a API direto da imagem Docker
+      api:
+        image: carlosoliveira20/api-entregas-image:latest 
+        ports:
+          - 8080:8080
+        options: >-
+          --health-cmd="curl -f http://localhost:8080/actuator/health || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          repository: carlosoliveira20/api-entregas-repo
-          path: api-code
-          
+        uses: actions/checkout@v3  # ✅ Só faz checkout dos TESTES
+        
       - name: Set up JDK
         uses: actions/setup-java@v2
         with:
           java-version: '22'
           distribution: 'adopt'
           
-      - name: Build and run API
+      - name: Wait for API to be ready
         run: |
-          cd api-code
-          mvn clean package -DskipTests
-          docker build -t api-entregas-image.
-          docker run -d -p 8080:8080 api-entregas-image
+          echo "Waiting for API to start..."
+          timeout 120s bash -c 'until curl -f -s http://localhost:8080/actuator/health > /dev/null; do sleep 5; done'
+          echo "✅ API is ready!"
           
-      - name: Wait for API
-        run: sleep 30  # Espera a API inicializar
-          
-      - name: Run tests
+      - name: Build and test
         run: mvn clean test
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-linux-latest
     needs: continuous-integration
     if: success()
     steps:
