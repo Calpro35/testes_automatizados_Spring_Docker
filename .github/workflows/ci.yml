@@ -17,7 +17,7 @@ jobs:
           
       - name: Build API Docker image
         run: |
-         docker build -t api-entregas-image.
+         docker build -t api-entregas-image .
           
       - name: Start API container
         run: |
