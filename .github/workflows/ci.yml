@@ -1,29 +1,13 @@
 name: Continuous Integration
-on:
-  pull_request:
-  push:
-    branches:
-      - '*'
+on: [push, pull_request]
 
 jobs:
   continuous-integration:
     runs-on: ubuntu-latest
     
-    services:
-      # ✅ Sobe a API direto da imagem Docker
-      api:
-        image: carlosoliveira20/api-entregas-image:latest 
-        ports:
-          - 8080:8080
-        options: >-
-          --health-cmd="curl -f http://localhost:8080/actuator/health || exit 1"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3  # ✅ Só faz checkout dos TESTES
+        uses: actions/checkout@v3
         
       - name: Set up JDK
         uses: actions/setup-java@v2
@@ -31,17 +15,30 @@ jobs:
           java-version: '22'
           distribution: 'adopt'
           
-      - name: Wait for API to be ready
+      - name: Build API Docker image
         run: |
-          echo "Waiting for API to start..."
-          timeout 120s bash -c 'until curl -f -s http://localhost:8080/actuator/health > /dev/null; do sleep 5; done'
+         docker build -t api-entregas-image.
+          
+      - name: Start API container
+        run: |
+          docker run -d -p 8080:8080 --name api-container api-entregas-image
+          
+      - name: Wait for API to start
+        run: |
+          echo "Waiting for API..."
+          timeout 60s bash -c 'until curl -f -s http://localhost:8080/actuator/health > /dev/null; do sleep 5; done'
           echo "✅ API is ready!"
           
-      - name: Build and test
+      - name: Run tests
         run: mvn clean test
+        
+      - name: Stop API container
+        run: |
+          docker stop api-container || true
+          docker rm api-container || true
 
   deploy:
-    runs-on: ubuntu-linux-latest
+    runs-on: ubuntu-latest
     needs: continuous-integration
     if: success()
     steps:
